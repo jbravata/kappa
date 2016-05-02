@@ -104,7 +104,7 @@ module Twitch::V2
     end
 
     # @example
-    #   23945610 
+    #   23945610
     # @return [Fixnum] Unique Twitch ID.
     attr_reader :id
 
@@ -155,5 +155,16 @@ module Twitch::V2
         User.new(json, @query)
       end
     end
+
+    def following?( user_name, channel_name )
+      user_name = CGI.escape(user_name)
+      channel_name = CGI.escape(channel_name)
+
+      Twitch::Status.map(404 => false) do
+        @query.connection.get("users/#{user_name}/follows/channels/#{channel_name}")
+        true
+      end
+    end
+
   end
 end

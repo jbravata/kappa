@@ -166,5 +166,15 @@ module Twitch::V2
       end
     end
 
+    def following_data( user_name, channel_name )
+      user_name = CGI.escape(user_name)
+      channel_name = CGI.escape(channel_name)
+
+      Twitch::Status.map(404 => false) do
+        json = @query.connection.get("users/#{user_name}/follows/channels/#{channel_name}")
+        json
+      end
+    end
+
   end
 end

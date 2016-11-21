@@ -103,6 +103,26 @@ module Twitch::V2
       end
     end
 
+    # @param target [String, Channel, User, Stream, #name] The name of the channel to check.
+    # REQUIRES OAUTH AUTHENTICATION FOR THE USER.  Use a per-request header to set this.
+    # @return [Boolean] `true` if the user is subscribed to the channel, `false` otherwise.
+    # @see https://github.com/justintv/Twitch-API/blob/master/v3_resources/subscriptions.md
+    def subscribed?(target, oauth_key)
+      name = if target.respond_to?(:name)
+        target.name
+      else
+        target.to_s
+      end
+
+      user_name = CGI.escape(@name)
+      channel_name = CGI.escape(name)
+
+      Twitch::Status.map(404 => false, 400 => false) do
+        @query.connection.add_per_request_header({'Authorization: ' => 'OAuth ' + oauth_key}).get("users/#{user_name}/subscriptions/#{channel_name}")
+        true
+      end
+    end
+
     # @example
     #   23945610
     # @return [Fixnum] Unique Twitch ID.
@@ -175,6 +195,17 @@ module Twitch::V2
         json
       end
     end
+
+    def subscribed?( user_name, channel_name, oauth_key )
+      user_name = CGI.escape(user_name)
+      channel_name = CGI.escape(channel_name)
+
+      Twitch::Status.map(404 => false, 400 => false, 401 => false) do
+        data = @query.connection.add_per_request_header({'Authorization' => 'OAuth ' + oauth_key}).get("users/#{user_name}/subscriptions/#{channel_name}")
+        true
+      end
+    end
+
 
   end
 end

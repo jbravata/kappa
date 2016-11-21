@@ -14,6 +14,7 @@ module Twitch
 
       @client_id = client_id
       @base_url = Addressable::URI.parse(base_url)
+      @per_request_headers = {}
     end
 
     def get(path, query = nil)
@@ -26,11 +27,17 @@ module Twitch
         'Kappa-Version' => Twitch::VERSION
       }.merge(headers())
 
+      # Merge in per-request headers
+      all_headers = all_headers.merge( @per_request_headers )
+
       response = self.class.get(request_url, :headers => all_headers, :query => query)
 
       url = response.request.last_uri.to_s
       status = response.code
       body = response.body
+
+      # Clear additional headers
+      @per_request_headers = {}
 
       case status
         when 400...500
@@ -122,6 +129,11 @@ module Twitch
         request_url = next_url
         json = get(request_url, params)
       end
+    end
+
+    def add_per_request_header( new_header )
+      @per_request_headers = @per_request_headers.merge( new_header )
+      self
     end
 
   private

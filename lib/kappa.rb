@@ -13,3 +13,13 @@ require 'kappa/team'
 require 'kappa/user'
 require 'kappa/images'
 require 'kappa/version'
+
+# V5 resources
+require 'kappa/v5/query'
+require 'kappa/v5/channel'
+require 'kappa/v5/stream'
+require 'kappa/v5/game'
+require 'kappa/v5/video'
+require 'kappa/v5/team'
+require 'kappa/v5/user'
+require 'kappa/v5/images'

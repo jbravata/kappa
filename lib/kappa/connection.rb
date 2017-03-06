@@ -8,11 +8,14 @@ module Twitch
   class Connection
     include HTTParty
 
-    def initialize(client_id, base_url = DEFAULT_BASE_URL)
+    def initialize(config, base_url = DEFAULT_BASE_URL)
+      raise ArgumentError, 'config' if !config || config.nil?
+      client_id = config.client_id
       raise ArgumentError, 'client_id' if !client_id || client_id.empty?
       raise ArgumentError, 'base_url' if !base_url || base_url.empty?
 
       @client_id = client_id
+      @config = config
       @base_url = Addressable::URI.parse(base_url)
       @per_request_headers = {}
     end
@@ -26,6 +29,9 @@ module Twitch
         'Client-ID' => @client_id,
         'Kappa-Version' => Twitch::VERSION
       }.merge(headers())
+
+      # Merge in auth token if presented
+      all_headers['Authorization'] = 'OAuth ' + config.auth_token if config && config.auth_token
 
       # Merge in per-request headers
       all_headers = all_headers.merge( @per_request_headers )
@@ -112,28 +118,35 @@ module Twitch
       request_url = path_uri.to_s
 
       json = get(request_url, params)
+      used_offset = offset
 
       loop do
         break if json['error'] && (json['status'] == 503)
         yield json
 
-        links = json['_links']
-        next_url = links['next']
-
-        next_uri = Addressable::URI.parse(next_url)
+        next_uri = Addressable::URI.parse(path)
+        next_uri.query_values ||= {}
+        next_offset = used_offset + limit
+        next_uri.query_values = next_uri.query_values.merge({'limit' => limit, 'offset' => next_offset })
         offset = next_uri.query_values['offset'].to_i
 
         total = json['_total']
         break if total && (offset > total)
 
-        request_url = next_url
+        request_url = next_uri.to_s
         json = get(request_url, params)
+        
+        used_offset = next_offset
       end
     end
 
     def add_per_request_header( new_header )
       @per_request_headers = @per_request_headers.merge( new_header )
       self
+    end
+
+    def config
+      @config
     end
 
   private

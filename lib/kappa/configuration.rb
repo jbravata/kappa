@@ -48,7 +48,7 @@ module Twitch
   def self.instance(&block)
     config = Configuration.new
     config.instance_eval(&block)
-    connection = config.create(:Connection, config.client_id)
+    connection = config.create(:Connection, config)
     return config.create(:Query, connection)
   end
 
@@ -76,13 +76,14 @@ module Twitch
 
     attr_writer :client_id
     attr_accessor :api
+    attr_accessor :auth_token
   end
 
 private
   # @private
   def self.create_default_query
     config = Configuration.new
-    connection = config.create(:Connection, config.client_id)
+    connection = config.create(:Connection, config)
     return config.create(:Query, connection)
   end
 end

@@ -43,7 +43,7 @@ module Twitch::V5
     # @return [Stream] Live stream object for this channel, or `nil` if the channel is not currently streaming.
     # @see #streaming?
     def stream
-      @query.streams.get(@name)
+      @query.streams.get(@id)
     end
 
     # Does this channel currently have a live stream?
@@ -58,7 +58,7 @@ module Twitch::V5
     # @note This incurs an additional web request.
     # @return [User] The user that owns this channel.
     def user
-      @query.users.get(@name)
+      @query.users.get(@id)
     end
 
     # Get the users following this channel.
@@ -79,9 +79,9 @@ module Twitch::V5
     # @return [Array<User>] Users following this channel, if no block is given.
     # @return [nil] If a block is given.
     def followers(options = {}, &block)
-      name = CGI.escape(@name)
+      id = CGI.escape(@id)
       return @query.connection.accumulate(
-        :path => "channels/#{name}/follows",
+        :path => "channels/#{id}/follows",
         :json => 'follows',
         :sub_json => 'user',
         :create => -> hash { User.new(hash, @query) },
@@ -114,7 +114,37 @@ module Twitch::V5
     # @return [Array<Video>] Videos for the channel, if no block is given.
     # @return [nil] If a block is given.
     def videos(options = {}, &block)
-      @query.videos.for_channel(@name, options, &block)
+      @query.videos.for_channel(@id, options, &block)
+    end
+
+    # Get the users subscribing to this channel.
+    # @note The number of followers is potentially very large, so it's recommended that you specify a `:limit`.
+    # @note This incurs additional web requests.
+    # @example
+    #   channel.subscriptions(:limit => 20)
+    # @example
+    #   channel.subscriptions do |sub|
+    #     puts sub.created_at
+    #     puts sub.user.name
+    #   end
+    # @param options [Hash] Limit/offset information.
+    # @option options [Fixnum] :limit (nil) Limit on the number of results returned.
+    # @option options [Fixnum] :offset (0) Offset into the result set to begin enumeration.
+    # @yield Optional. If a block is given, each subscription is yielded.
+    # @yieldparam [Subscription] subscription Current subscription.
+    # @see https://github.com/justintv/Twitch-API/blob/master/v3_resources/subscriptions.md#get-channelschannelsubscriptions
+    # @return [Array<Subscription>] Subscriptions to this channel, if no block is given.
+    # @return [nil] If a block is given.
+    def subscriptions(options = {}, &block)
+      id = CGI.escape(@id)
+      return @query.connection.accumulate(
+        :path => "channels/#{id}/subscriptions",
+        :json => 'subscriptions',
+        :create => -> hash { Subscription.new(hash, @query) },
+        :limit => options[:limit],
+        :offset => options[:offset],
+        &block
+      )
     end
 
     # @example
@@ -197,14 +227,31 @@ module Twitch::V5
     #   c = Twitch.channels.get('day9tv')
     # @param channel_name [String] The name of the channel to get. This is the same as the stream or user name.
     # @return [Channel] A valid `Channel` object if the channel exists, `nil` otherwise.
-    def get(channel_name)
-      name = CGI.escape(channel_name)
+    def get(channel_id)
+      id = CGI.escape(channel_id)
 
       # HTTP 422 can happen if the channel is associated with a Justin.tv account.
       Twitch::Status.map(404 => nil, 422 => nil) do
-        json = @query.connection.get("channels/#{name}")
+        json = @query.connection.get("channels/#{id}")
         Channel.new(json, @query)
       end
+    end
+
+    # Shortcut method: Return's a channel's list of subscribers.
+    # @example
+    #   c = Twitch.channels.subscribers('111111')
+    # @param channel_id [String] The ID of the channel to get subscribers for.
+    # @return [Array<Subscription>] Returns an array containing Subscription objects representing those subscriptions.
+    def subscriptions(channel_id, options={},&block)
+      id = CGI.escape(channel_id)
+      return @query.connection.accumulate(
+        :path => "channels/#{id}/subscriptions",
+        :json => 'subscriptions',
+        :create => -> hash { Subscription.new(hash, @query) },
+        :limit => options[:limit],
+        :offset => options[:offset],
+        &block
+      )
     end
   end
 end

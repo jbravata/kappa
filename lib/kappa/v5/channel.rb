@@ -253,5 +253,15 @@ module Twitch::V5
         &block
       )
     end
+
+	def subscribed?( user_name, channel_name )
+      user_name = CGI.escape(user_name)
+      channel_name = CGI.escape(channel_name)
+
+      Twitch::Status.map(404 => false, 400 => false, 401 => false) do
+        data = @query.connection.get("channels/#{channel_name}/subscriptions/#{user_name}")
+        true
+      end
+    end	
   end
 end

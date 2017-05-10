@@ -196,12 +196,16 @@ module Twitch::V5
       end
     end
 
-    def subscribed?( user_name, channel_name, oauth_key )
+    def subscribed?( user_name, channel_name, oauth_key=nil )
       user_name = CGI.escape(user_name)
       channel_name = CGI.escape(channel_name)
 
       Twitch::Status.map(404 => false, 400 => false, 401 => false) do
-        data = @query.connection.add_per_request_header({'Authorization' => 'OAuth ' + oauth_key}).get("users/#{user_name}/subscriptions/#{channel_name}")
+		  if oauth_key.nil?
+			  data = @query.connection.get("users/#{user_name}/subscriptions/#{channel_name}")
+		  else
+			  data = @query.connection.add_per_request_header({'Authorization' => 'OAuth ' + oauth_key}).get("users/#{user_name}/subscriptions/#{channel_name}")
+	      end
         true
       end
     end

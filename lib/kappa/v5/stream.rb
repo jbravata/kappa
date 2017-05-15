@@ -21,6 +21,7 @@ module Twitch::V5
       @preview_url = hash['preview']
       @channel = Channel.new(hash['channel'], @query)
       @url = @channel.url
+	  @stream_started_at = hash['created_at']
     end
 
     # Get the owner of this stream.
@@ -69,6 +70,11 @@ module Twitch::V5
     #   "http://www.twitch.tv/lethalfrag"
     # @return [String] The URL for this stream.
     attr_reader :url
+
+	# @example
+    #   2017-05-14T22:24:19Z
+    # @return [Time] Time that the stream was started.
+    attr_reader :stream_started_at
   end
 
   # Site-wide stream summary statistics.

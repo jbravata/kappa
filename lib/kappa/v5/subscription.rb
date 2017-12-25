@@ -18,6 +18,7 @@ module Twitch::V5
       @id = hash['_id']
       @created_at = Time.parse(hash['created_at']).utc
       @user = User.new( hash['user'], query )
+      @sub_plan = hash['sub_plan'] && hash['sub_plan'] != 'Prime' ? hash['sub_plan'].to_i : 1000
     end
 
     # @example
@@ -35,6 +36,24 @@ module Twitch::V5
     # @return [User] A user object with Twitch user data.
     attr_reader :user
 
+    # @example
+    #   23945610
+    # @return [Fixnum] Unique Twitch ID for the subscription.
+    attr_reader :sub_plan
+
+    def sub_level
+      case sub_plan
+        when 1000
+          return "$4.99"
+        when 2000
+          return "$9.99"
+        when 3000
+          return "$24.99"
+        else
+          return "n/a: #{sub_plan}"
+      end
+    end
+    
   end
 
 end
